@@ -34,6 +34,10 @@ docker run --rm -v "$HOME/.cache/pio-docker":/root/.platformio -v "$PWD":/proj -
 - To compile without the user's secrets, copy `include/secrets.example.h` to `include/secrets.h`
   in a scratch copy of the project. Careful with `cp` aliases (`cp -i`) that silently refuse to
   overwrite.
+- After any UI change, run `tools/sim/render.sh` and **look at** the PNGs in
+  `docs/screenshots/` (clipping, overlaps, missing glyphs shown as boxes). Add a scenario to
+  `tools/sim/sim.cpp` for new screens. The simulator uses the stub `tools/sim/stub/secrets.h`,
+  never the real one.
 - You usually cannot flash or see the device. Say so plainly: "builds" is not "works on the
   hardware". Ask the user to report what the screen shows.
 
@@ -49,7 +53,7 @@ docker run --rm -v "$HOME/.cache/pio-docker":/root/.platformio -v "$PWD":/proj -
   care: `AppState` is copied as a whole.
 - **JSON** is parsed through ArduinoJson filters (`fetch_status`, `fetch_queue`). When you need a
   new field, add it to the filter, otherwise it silently reads as missing/zero.
-- **UI text** lives only in `src/strings.h` (English default, Hungarian with `UI_LANGUAGE_HU`).
+- **UI text** lives only in `src/ui_strings.h` (English default, Hungarian with `UI_LANGUAGE_HU`).
   Add every new string to **both** language blocks.
 - **Fonts**: `font_hu_14/18/28` replace LVGL's Montserrat. A character outside ASCII, Latin-1
   and Őőűű, or a symbol outside the set in `tools/gen_fonts.sh`, renders as a box. Regenerate

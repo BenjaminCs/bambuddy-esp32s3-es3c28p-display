@@ -22,7 +22,7 @@
 #include "certs.h"
 #include "lwip/dns.h"
 #include "secrets.h"
-#include "strings.h"
+#include "ui_strings.h"
 
 static const uint32_t PRINTERS_EVERY_MS = 60000;
 static const uint32_t STATUS_EVERY_MS = 3000;

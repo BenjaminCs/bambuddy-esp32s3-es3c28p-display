@@ -50,7 +50,8 @@
 #define STR_FMT_REMAINING      "hátra %s"
 #define STR_FMT_REMAINING_LAYER "hátra %s   réteg %d/%d"
 #define STR_FMT_QUEUE_COUNT    "%d tétel a sorban"
-#define STR_FMT_TEMPS          "Fej %.0f/%.0f°   Asztal %.0f/%.0f°"
+#define STR_NOZZLE             "Fej"
+#define STR_BED                "Asztal"
 #define STR_AUTO               "automatikus"
 
 #define STR_BTN_PAUSE          "Szünet"
@@ -122,7 +123,8 @@
 #define STR_FMT_REMAINING      "%s left"
 #define STR_FMT_REMAINING_LAYER "%s left   layer %d/%d"
 #define STR_FMT_QUEUE_COUNT    "%d job(s) queued"
-#define STR_FMT_TEMPS          "Nozzle %.0f/%.0f°   Bed %.0f/%.0f°"
+#define STR_NOZZLE             "Nozzle"
+#define STR_BED                "Bed"
 #define STR_AUTO               "auto"
 
 #define STR_BTN_PAUSE          "Pause"

@@ -17,7 +17,7 @@
 
 #include "model.h"
 #include "net.h"
-#include "strings.h"
+#include "ui_strings.h"
 
 #define UI_W 320
 #define UI_H 240
@@ -64,6 +64,14 @@ static void fmt_duration(char *out, size_t n, int minutes) {
         snprintf(out, n, STR_FMT_DUR_MIN, minutes);
     else
         snprintf(out, n, STR_FMT_DUR_H_MIN, minutes / 60, minutes % 60);
+}
+
+// "220/220°" while heating, just "64°" once the heater is off (target 0).
+static void fmt_temp(char *out, size_t n, float current, float target) {
+    if (target > 0)
+        snprintf(out, n, "%.0f/%.0f°", current, target);
+    else
+        snprintf(out, n, "%.0f°", current);
 }
 
 // Bambu gcode_state values as reported by Bambuddy.
@@ -172,7 +180,9 @@ static void queue_item_cb(lv_event_t *e) {
 // ---------------------------------------------------------------- refresh
 
 static void update_printer_bar() {
-    bool changed = printer_map_count != S.printer_count;
+    static bool last_api_ok = false;
+    bool changed = printer_map_count != S.printer_count || last_api_ok != S.api_ok;
+    last_api_ok = S.api_ok;
     for (int i = 0; i < S.printer_count; i++) {
         const char *n = display_name(S.printers[i]);
         if (strncmp(printer_names[i], n, sizeof(printer_names[i]) - 1) != 0) changed = true;
@@ -183,8 +193,10 @@ static void update_printer_bar() {
     printer_map[S.printer_count] = "";  // map terminator
     printer_map_count = S.printer_count;
     if (S.printer_count == 0) {
+        // Before the first successful API call there is no list yet, not "no printer".
+        static const char *loading[] = {STR_LOADING, ""};
         static const char *empty[] = {STR_NO_PRINTER, ""};
-        lv_buttonmatrix_set_map(printer_bar, empty);
+        lv_buttonmatrix_set_map(printer_bar, S.api_ok ? empty : loading);
         return;
     }
     if (s_sel >= S.printer_count) s_sel = 0;
@@ -264,7 +276,10 @@ static void update_status() {
             buf[0] = 0;
         lv_label_set_text(lbl_info, buf);
     }
-    snprintf(buf, sizeof(buf), SYM_FIRE " " STR_FMT_TEMPS, p.nozzle, p.nozzle_target, p.bed, p.bed_target);
+    char nozzle[16], bed[16];
+    fmt_temp(nozzle, sizeof(nozzle), p.nozzle, p.nozzle_target);
+    fmt_temp(bed, sizeof(bed), p.bed, p.bed_target);
+    snprintf(buf, sizeof(buf), SYM_FIRE " " STR_NOZZLE " %s   " STR_BED " %s", nozzle, bed);
     lv_label_set_text(lbl_temp, buf);
 
     // Buttons depend on the printer state.

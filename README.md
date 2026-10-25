@@ -5,18 +5,14 @@ print archive and queue manager for Bambu Lab printers. It runs on a cheap 2.8" 
 panel and lets you see what your printers are doing and **start the next queued print with one
 tap**: no phone, no laptop.
 
-```
-+--------------------------------------------+
-| [A1 Mini] [X2D]                       wifi |
-| Status | Queue (10)                        |
-| Printing                                   |
-| Benchy_plate_1                             |
-| [==================------]  72%            |
-| 18 min left   layer 58/67                  |
-| Nozzle 220/220°   Bed 55/55°               |
-| [ Pause         ]  [ Stop      ]           |
-+--------------------------------------------+
-```
+| Printing | Queue | Start a job |
+|---|---|---|
+| ![Printing](docs/screenshots/en_status.png) | ![Queue](docs/screenshots/en_queue.png) | ![Start a queued job](docs/screenshots/en_queue_item.png) |
+| **Plate needs clearing** | **One tap: plate clear + next job** | **Second printer** |
+| ![Finished, waiting for plate clear](docs/screenshots/en_finished.png) | ![Confirm](docs/screenshots/en_confirm_next.png) | ![X2D idle](docs/screenshots/en_x2d.png) |
+
+All screenshots (English and Hungarian, every state): [docs/screenshots](docs/screenshots).
+They are rendered from the real UI code by `tools/sim/render.sh`, not mock-ups.
 
 ## Features
 
@@ -33,7 +29,7 @@ tap**: no phone, no laptop.
 - Header icon: green = OK, orange = Bambuddy not answering, red = no Wi-Fi.
 - Dims after 2 minutes. The touch that wakes it never presses a button.
 - HTTPS with certificate validation, a scoped Bambuddy API key, over-the-air updates.
-- English UI by default, Hungarian included. More languages: [src/strings.h](src/strings.h).
+- English UI by default, Hungarian included. More languages: [src/ui_strings.h](src/ui_strings.h).
 
 ## What you need
 
@@ -104,6 +100,19 @@ The output is `.pio/build/usb/firmware-merged.bin`, a complete image for flash o
 OTA_PASSWORD=<from secrets.h> pio run -e ota -t upload --upload-port <display IP>
 ```
 
+## UI language
+
+The language is chosen **at compile time**, not on the device: English by default, Hungarian
+when `include/secrets.h` contains `#define UI_LANGUAGE_HU`. Change it and flash again.
+All text is in [src/ui_strings.h](src/ui_strings.h); add a block there for another language.
+
+## Screenshots without hardware
+
+`tools/sim/render.sh` compiles `src/ui.cpp` and LVGL for your computer, feeds it mock Bambuddy
+data, taps through every state and writes PNGs to `docs/screenshots/`. Handy for checking UI
+changes before flashing. Needs gcc/g++ and Python with Pillow, plus one `pio run` first (for
+the LVGL sources).
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -133,10 +142,12 @@ src/
   net.cpp / net.h      Wi-Fi + Bambuddy API client in a FreeRTOS task (core 0)
   ui.cpp / ui.h        LVGL screens and actions
   model.h              shared state and command structs
-  strings.h            all UI text (EN + HU)
+  ui_strings.h         all UI text (EN + HU)
   certs.h              Let's Encrypt root certificates
   fonts/               generated LVGL fonts (Latin-1 + Hungarian + symbols)
 tools/gen_fonts.sh     regenerates the fonts
+tools/sim/             host simulator: renders UI screenshots without hardware
+docs/screenshots/      rendered screenshots (EN + HU)
 docs/HARDWARE.md       the board: exact model, pinout, settings, pitfalls
 docs/BAMBUDDY_API.md   which Bambuddy endpoints are used and how they behave
 CLAUDE.md              instructions for Claude (or other AI assistants) working on this code
