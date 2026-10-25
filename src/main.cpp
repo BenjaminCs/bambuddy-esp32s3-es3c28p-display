@@ -11,19 +11,21 @@
 #include <WiFi.h>
 #include <lvgl.h>
 
+#include "secrets.h"  // first, so it may override DISPLAY_ROTATION
 #include "board.h"
 #include "net.h"
-#include "secrets.h"
 #include "ui.h"
 
-static const uint32_t DIM_AFTER_MS = 120000;  // dim after 2 minutes without touch
+static const uint32_t DIM_AFTER_MS = 60000;   // dim after 1 minute without touch
+static const uint32_t OFF_AFTER_MS = 120000;  // backlight off after 2 minutes
 static const uint8_t BRIGHT = 200;            // backlight PWM 0-255
 static const uint8_t DIM = 12;
 static const int BUF_LINES = 40;              // LVGL partial buffer height (2 x 25.6 kB)
 
 static LGFX tft;
 static uint32_t last_touch = 0;
-static bool dimmed = false;
+enum Power { POWER_ON, POWER_DIM, POWER_OFF };
+static Power power = POWER_ON;
 static bool swallow_touch = false;  // the touch that wakes the screen must not press a button
 static bool ota_started = false;
 
@@ -38,12 +40,29 @@ static void flush_cb(lv_display_t *disp, const lv_area_t *a, uint8_t *px) {
 }
 
 static void touch_cb(lv_indev_t *, lv_indev_data_t *data) {
-    uint16_t x, y;
-    bool pressed = tft.getTouch(&x, &y);  // already rotated to screen coordinates
+    // The FT6336G sometimes reports a single "released" sample while the finger is still
+    // down; bridge such gaps briefly, otherwise LVGL sees the click as aborted.
+    static const uint32_t RELEASE_HOLD_MS = 60;
+    static uint32_t last_pressed_ms = 0;
+    static int last_x = 0, last_y = 0;
+
+    int32_t rx, ry;
+    int x = 0, y = 0;
+    bool pressed = tft.getTouchRaw(&rx, &ry) > 0;  // raw FT6336G coordinates
+    if (pressed) {
+        touch_raw_to_screen(rx, ry, x, y);
+        last_pressed_ms = millis();
+        last_x = x;
+        last_y = y;
+    } else if (last_pressed_ms && millis() - last_pressed_ms < RELEASE_HOLD_MS) {
+        pressed = true;
+        x = last_x;
+        y = last_y;
+    }
     if (pressed) {
         last_touch = millis();
-        if (dimmed) {
-            dimmed = false;
+        if (power != POWER_ON) {
+            power = POWER_ON;
             swallow_touch = true;
             tft.setBrightness(BRIGHT);
         }
@@ -60,6 +79,49 @@ static void touch_cb(lv_indev_t *, lv_indev_data_t *data) {
 }
 
 static uint32_t tick_cb() { return millis(); }
+
+// Wakes the screen without a touch (print finished, failed, paused, new printer error).
+// No touch is swallowed in this case: the screen is already lit when the user reaches it.
+static void wake_for_event(const char *why) {
+    Serial.printf("Wake: %s\n", why);
+    power = POWER_ON;
+    last_touch = millis();
+    tft.setBrightness(BRIGHT);
+}
+
+static bool state_busy(const char *s) {
+    return !strcmp(s, "RUNNING") || !strcmp(s, "PREPARE") || !strcmp(s, "SLICING") || !strcmp(s, "PAUSE");
+}
+
+// Compares each printer's state with the previous poll and wakes the screen on events
+// worth looking at. Uses its own snapshot, so it does not interfere with the UI's.
+static void check_wake_events() {
+    static AppState snap;
+    static uint32_t snap_version = 0;
+    static int prev_id[MAX_PRINTERS];
+    static char prev_state[MAX_PRINTERS][16];
+    static int prev_hms[MAX_PRINTERS];
+
+    if (!net_snapshot(snap, snap_version)) return;
+    snap_version = snap.version;
+
+    for (int i = 0; i < snap.printer_count && i < MAX_PRINTERS; i++) {
+        const PrinterInfo &p = snap.printers[i];
+        bool known = prev_id[i] == p.id && prev_state[i][0] && p.state[0] && p.status_ok;
+        if (known && strcmp(prev_state[i], p.state) != 0) {
+            if (!strcmp(p.state, "FINISH")) wake_for_event("print finished");
+            else if (!strcmp(p.state, "FAILED")) wake_for_event("print failed");
+            else if (!strcmp(p.state, "PAUSE")) wake_for_event("print paused");
+            else if (state_busy(prev_state[i]) && !state_busy(p.state)) wake_for_event("print ended");
+        }
+        if (known && p.hms_count > prev_hms[i]) wake_for_event("printer error");
+        if (p.status_ok && p.state[0]) {
+            prev_id[i] = p.id;
+            strlcpy(prev_state[i], p.state, sizeof(prev_state[i]));
+            prev_hms[i] = p.hms_count;
+        }
+    }
+}
 
 // The FT6336G reset line is a GPIO on this board; pulse it before LovyanGFX
 // probes the controller, otherwise touch can come up dead after a soft reset.
@@ -109,6 +171,8 @@ void setup() {
     lv_indev_t *touch = lv_indev_create();
     lv_indev_set_type(touch, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(touch, touch_cb);
+    lv_indev_set_scroll_limit(touch, 30);  // finger jitter must not turn a tap into a scroll
+    lv_indev_set_long_press_time(touch, 600);
 
     ui_begin(disp);
     net_begin();
@@ -122,9 +186,16 @@ void loop() {
     if (!ota_started && WiFi.status() == WL_CONNECTED) start_ota();
     if (ota_started) ArduinoOTA.handle();
 
-    if (!dimmed && millis() - last_touch > DIM_AFTER_MS) {
-        dimmed = true;
+    check_wake_events();
+
+    uint32_t idle = millis() - last_touch;
+    if (power == POWER_ON && idle > DIM_AFTER_MS) {
+        power = POWER_DIM;
         tft.setBrightness(DIM);
+    }
+    if (power == POWER_DIM && idle > OFF_AFTER_MS) {
+        power = POWER_OFF;
+        tft.setBrightness(0);
     }
     delay(5);
 }

@@ -29,14 +29,29 @@
 #define SCREEN_W 320  // landscape
 #define SCREEN_H 240
 
-// 1 or 3: landscape, depending on which side the USB-C port should be on.
+// Landscape orientation. 3 is the right way up on the ES3C28P (verified on hardware);
+// 1 turns the picture by 180°.
 #ifndef DISPLAY_ROTATION
-#define DISPLAY_ROTATION 1
+#define DISPLAY_ROTATION 3
 #endif
-// If touches land mirrored or rotated, try values 0-7 here.
-#ifndef TOUCH_OFFSET_ROTATION
-#define TOUCH_OFFSET_ROTATION 0
+
+// Touch mapping, measured on real hardware (fitted from a 5-cross tap test, then checked on
+// 12 targets).
+//
+// LovyanGFX's getTouch()/offset_rotation does not fit this panel: the touch layer's axes are
+// turned against the LCD, and its active area is narrower than the nominal 0-239 in raw X.
+// So the firmware reads raw FT6336G coordinates with getTouchRaw() and maps them itself.
+static inline int touch_clamp(float v, int hi) { return v < 0 ? 0 : (v > hi ? hi : (int)(v + 0.5f)); }
+
+static inline void touch_raw_to_screen(int raw_x, int raw_y, int &x, int &y) {
+#if DISPLAY_ROTATION == 3
+    x = touch_clamp(16.0f + raw_y, SCREEN_W - 1);
+    y = touch_clamp(276.0f - 1.27157f * raw_x, SCREEN_H - 1);
+#else  // DISPLAY_ROTATION == 1
+    x = touch_clamp(303.4f - raw_y, SCREEN_W - 1);
+    y = touch_clamp(1.27157f * raw_x - 37.0f, SCREEN_H - 1);
 #endif
+}
 
 class LGFX : public lgfx::LGFX_Device {
     lgfx::Panel_ILI9341 _panel;
@@ -97,7 +112,7 @@ public:
             c.pin_int = PIN_TOUCH_INT;
             c.pin_rst = -1;  // reset is pulsed by setup() before init
             c.bus_shared = false;
-            c.offset_rotation = TOUCH_OFFSET_ROTATION;
+            c.offset_rotation = 0;  // unused: mapping is done by touch_raw_to_screen()
             c.i2c_port = 0;
             c.i2c_addr = 0x38;
             c.pin_sda = PIN_TOUCH_SDA;

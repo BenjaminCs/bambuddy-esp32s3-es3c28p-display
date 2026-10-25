@@ -58,8 +58,13 @@ docker run --rm -v "$HOME/.cache/pio-docker":/root/.platformio -v "$PWD":/proj -
 - **Fonts**: `font_hu_14/18/28` replace LVGL's Montserrat. A character outside ASCII, Latin-1
   and Őőűű, or a symbol outside the set in `tools/gen_fonts.sh`, renders as a box. Regenerate
   with the script; do not hand-edit `src/fonts/*.c`.
-- **Board specifics** live in `src/board.h` only. Rotation/touch tweaks go through
-  `DISPLAY_ROTATION` / `TOUCH_OFFSET_ROTATION` build flags.
+- **Board specifics** live in `src/board.h` only. Rotation is `DISPLAY_ROTATION` (default 3).
+- **Touch mapping is measured, not guessed.** `touch_raw_to_screen()` maps raw FT6336G
+  coordinates (`getTouchRaw()`); at rotation 3: `x = 16 + raw_y`, `y = 276 - 1.27157 * raw_x`
+  (rotation 1: `x = 303.4 - raw_y`, `y = 1.27157 * raw_x - 37`), verified on hardware with a
+  tap test. Mixing up the two rotations' formulas mirrors touch on both axes. LovyanGFX's `getTouch()` / `offset_rotation` give wrong results on
+  this panel. Do not "simplify" this back to `getTouch()`, and do not change rotation or the
+  mapping without a hardware tap test.
 
 ## Library versions and API names
 

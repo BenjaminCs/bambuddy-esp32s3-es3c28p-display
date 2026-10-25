@@ -27,7 +27,8 @@ They are rendered from the real UI code by `tools/sim/render.sh`, not mock-ups.
 - **Queue tab:** pending jobs with estimated time and filament. Tap one to start it. If Bambuddy
   reports the spool may run short, the display asks before starting anyway.
 - Header icon: green = OK, orange = Bambuddy not answering, red = no Wi-Fi.
-- Dims after 2 minutes. The touch that wakes it never presses a button.
+- Dims after 1 minute, backlight off after 2. Wakes up by itself when a print finishes,
+  fails, pauses or reports an error. The touch that wakes it never presses a button.
 - HTTPS with certificate validation, a scoped Bambuddy API key, over-the-air updates.
 - English UI by default, Hungarian included. More languages: [src/ui_strings.h](src/ui_strings.h).
 
@@ -117,8 +118,8 @@ the LVGL sources).
 
 | Symptom | Fix |
 |---|---|
-| Picture upside down | add `-DDISPLAY_ROTATION=3` to `build_flags` |
-| Touches land in the wrong place / mirrored | add `-DTOUCH_OFFSET_ROTATION=n` (try 0-7) |
+| Picture upside down | add `-DDISPLAY_ROTATION=1` to `build_flags` (default is 3) |
+| Touches land in the wrong place | the touch mapping in `src/board.h` (`touch_raw_to_screen`) was measured on one unit; re-measure raw coordinates with `getTouchRaw()` if yours differs |
 | Colours look negative | `src/board.h`: `c.invert = false` |
 | Wi-Fi icon stays red | wrong credentials, or a 5 GHz-only network |
 | Icon orange, "Bambuddy unreachable" | DNS resolves to an address the display cannot reach (see `DNS_SERVER_IP`), or a TLS problem: certificate not from Let's Encrypt (replace `src/certs.h`) |
@@ -158,9 +159,9 @@ licenses/              full texts of third-party licenses (OFL-1.1)
 
 ## Status
 
-The firmware builds cleanly for this board. Pinout, panel and touch settings come from the
-vendor's documentation and init code. Rotation, touch mapping and colour inversion are the
-settings most likely to need one of the adjustments above on your unit.
+Running on an ES3C28P with Bambuddy 1.2.5.7 and a Bambu Lab A1 Mini. Display and touch are
+verified on the device (touch mapping measured with a tap test). Other units of the same board
+should behave the same; if touches land off target on yours, see Troubleshooting.
 
 ## License
 

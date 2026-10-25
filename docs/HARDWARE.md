@@ -76,7 +76,8 @@ its lines with touch.
 - `invert = true`. The vendor init sequence sends `0x21` (display inversion ON) because it is
   an IPS panel. Without it every colour is negative.
 - `rgb_order = false` (BGR). The vendor sets the BGR bit in MADCTL (`0x36 = 0x08`).
-- `panel_width = 240`, `panel_height = 320` (native portrait); rotation 1 or 3 = landscape.
+- `panel_width = 240`, `panel_height = 320` (native portrait). **Rotation 3** is landscape the
+  right way up; rotation 1 shows the picture upside down.
 - `pin_rst = -1`: reset is wired to EN.
 - SPI at 40 MHz write / 16 MHz read is reliable.
 - Vendor init code for reference: https://www.lcdwiki.com/res/ES3C28P/ILI9341V_Init.txt
@@ -85,8 +86,12 @@ its lines with touch.
 ### Touch (LovyanGFX `Touch_FT5x06`)
 
 - The FT6336G is FT5x06-compatible. I2C port 0, 400 kHz, address 0x38.
-- Raw coordinates are in portrait (0–239 × 0–319). LovyanGFX rotates them together with the
-  display. If touches end up mirrored, adjust `offset_rotation` (0–7).
+- **Do not rely on LovyanGFX's touch rotation for this panel.** The touch layer is rotated
+  against the LCD and its active area is smaller than the LCD (raw X ≈ 29–218, raw Y ≈ 0–303).
+  Measured with a tap test on hardware, using `getTouchRaw()`:
+  - rotation 3 (the right way up): `screen x = 16 + raw_y`, `screen y = 276 − 1.27157 × raw_x`
+  - rotation 1 (upside down): `screen x = 303.4 − raw_y`, `screen y = 1.27157 × raw_x − 37`
+  See `touch_raw_to_screen()` in `src/board.h`.
 - Pulse the reset pin (GPIO 18) low for ~10 ms, then wait ~300 ms before init. Otherwise
   touch can stay dead after a soft reset.
 
