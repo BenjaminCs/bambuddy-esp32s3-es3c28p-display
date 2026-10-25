@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 BenjaminCs - https://github.com/BenjaminCs/bambuddy-esp32s3-es3c28p-display
 # Regenerates src/fonts/font_hu_{14,18,28}.c with lv_font_conv.
 #
 # Why: LVGL's built-in Montserrat fonts contain ASCII only. These fonts add

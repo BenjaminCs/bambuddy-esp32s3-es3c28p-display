@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 BenjaminCs - https://github.com/BenjaminCs/bambuddy-esp32s3-es3c28p-display
 # PlatformIO post-build step: writes .pio/build/<env>/firmware-merged.bin, a single
 # image (bootloader + partition table + boot_app0 + app) to flash at offset 0x0.
 # This lets people flash from the browser (https://espressif.github.io/esptool-js/)

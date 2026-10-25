@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 BenjaminCs - https://github.com/BenjaminCs/bambuddy-esp32s3-es3c28p-display
+
 #pragma once
 
 // Let's Encrypt root certificates: ISRG Root X1 (valid until 2035) and X2 (until 2040).

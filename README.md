@@ -1,4 +1,4 @@
-# Bambuddy Touch Display
+# Bambuddy Touch Display for ESP32-S3 (LCDWIKI ES3C28P)
 
 A small wall/desk controller for [Bambuddy](https://github.com/maziggy/bambuddy), the self-hosted
 print archive and queue manager for Bambu Lab printers. It runs on a cheap 2.8" ESP32-S3 touch
@@ -151,6 +151,9 @@ docs/screenshots/      rendered screenshots (EN + HU)
 docs/HARDWARE.md       the board: exact model, pinout, settings, pitfalls
 docs/BAMBUDDY_API.md   which Bambuddy endpoints are used and how they behave
 CLAUDE.md              instructions for Claude (or other AI assistants) working on this code
+LICENSE                AGPL-3.0
+THIRD_PARTY_NOTICES.md licenses of the bundled fonts and libraries
+licenses/              full texts of third-party licenses (OFL-1.1)
 ```
 
 ## Status
@@ -158,6 +161,13 @@ CLAUDE.md              instructions for Claude (or other AI assistants) working 
 The firmware builds cleanly for this board. Pinout, panel and touch settings come from the
 vendor's documentation and init code. Rotation, touch mapping and colour inversion are the
 settings most likely to need one of the adjustments above on your unit.
+
+## License
+
+[AGPL-3.0-or-later](LICENSE), like [Bambuddy](https://github.com/maziggy/bambuddy) itself.
+You may use, modify and share this firmware; if you distribute a modified version (source or
+compiled), you must make its source available under the same license.
+Third-party components and their licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Credits
 

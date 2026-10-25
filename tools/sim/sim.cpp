@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 BenjaminCs - https://github.com/BenjaminCs/bambuddy-esp32s3-es3c28p-display
+
 // Host-side screenshot generator: runs the real src/ui.cpp against mock Bambuddy
 // state, drives it with scripted touches and dumps the framebuffer as PPM.
 //   ./sim <scenario> <out.ppm>
